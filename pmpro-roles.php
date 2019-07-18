@@ -68,9 +68,12 @@ class PMPRO_Roles {
 	function edit_level( $saveid ) {
 		//by being here, we know we already have the $_REQUEST we need, so no need to check.
 		$role_key = PMPRO_Roles::$role_key . $saveid;
+
+		$role_caps = PMPRO_Roles::capabilities( $saveid );
+
 		//created a new level
 		if( $_REQUEST['edit'] < 0 ) {
-			add_role( $role_key, $_REQUEST['name'], array( 'read' => true ) );
+			add_role( $role_key, $_REQUEST['name'], $role_caps );
 		}
 		//edited a level
 		else {
@@ -81,7 +84,7 @@ class PMPRO_Roles {
 			if(!is_array( $roles ) ) return;
 			//the role doesn't exist - create it, then we are done.
 			if(!isset( $roles[$role_key] ) ){
-				add_role( $role_key, $_REQUEST['name'], array( 'read' => true ) );
+				add_role( $role_key, $_REQUEST['name'], $role_caps );
 				return;
 			}
 			$role = $roles[$role_key];
@@ -91,7 +94,7 @@ class PMPRO_Roles {
 				//delete the role (because update_role() doesn't exist...)
 				remove_role( $role_key );
 				//then recreate it
-				add_role( $role_key, $_REQUEST['name'], array( 'read' => true ) );
+				add_role( $role_key, $_REQUEST['name'], $role_caps );
 			}
 		}
 	}
@@ -144,10 +147,12 @@ class PMPRO_Roles {
 		$i = 0;
 		foreach ( $levels as $level ) {
 			$role_key = PMPRO_Roles::$role_key . $level->id;
+
+			$role_caps = PMPRO_Roles::capabilities( $level->id );
 			//the role doesn't exist for this level
 			if( !get_role( $role_key ) ) {
 				$i++;
-				add_role( $role_key, $level->name, array( 'read' => true ));
+				add_role( $role_key, $level->name, $role_caps );
 			}
 		}
 		if( defined( 'DOING_AJAX' ) && DOING_AJAX ){
@@ -169,6 +174,18 @@ class PMPRO_Roles {
 			'<a href="' . wp_nonce_url(get_admin_url(NULL, 'plugins.php?pmpro_roles_delete_and_deactivate=1'), 'pmpro_roles_delete_and_deactivate') . '">' . __('Delete Roles and Deactivate', 'pmpro-roles') . '</a>',
 		);
 		return array_merge($new_links, $links);
+	}
+
+
+	public static function capabilities( $level_id ) {
+
+		$capabilities = apply_filters( 'pmpro_roles_caps_' . $level_id,
+		array(
+			'read' => true
+		)
+		);
+
+		return $capabilities;
 	}
 
 	/**
